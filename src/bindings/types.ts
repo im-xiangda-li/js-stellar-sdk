@@ -1,4 +1,5 @@
 import { Spec } from "../contract/index.js";
+import { canOmitEventMapField } from "../contract/event_spec.js";
 import {
   parseTypeFromTypeDef,
   generateTypeImports,
@@ -405,8 +406,6 @@ ${members}
       0,
     );
 
-    // Map-format data fields are optional. parseEvent omits a key only for an
-    // `Option`, `()` or `Val` param, so this is looser than needed.
     const dataIsMapFormat =
       event.dataFormat.value ===
       ScSpecEventDataFormat.scSpecEventDataFormatMap.value;
@@ -423,7 +422,8 @@ ${members}
         const optional =
           dataIsMapFormat &&
           param.location.value ===
-            ScSpecEventParamLocationV0.scSpecEventParamLocationData.value;
+            ScSpecEventParamLocationV0.scSpecEventParamLocationData.value &&
+          canOmitEventMapField(param.type.type);
 
         return `${fieldDoc}    ${fieldName}${optional ? "?" : ""}: ${fieldType};`;
       })

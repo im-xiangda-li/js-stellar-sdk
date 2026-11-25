@@ -244,13 +244,7 @@ export function parseEvent(
           );
           if (entry) {
             dataPairs.push([param, entry.val]);
-          } else if (
-            // A sparse map leaves out void values, so only a param that can
-            // hold void may be missing.
-            param.type.type !== "scSpecTypeOption" &&
-            param.type.type !== "scSpecTypeVoid" &&
-            param.type.type !== "scSpecTypeVal"
-          ) {
+          } else if (!canOmitEventMapField(param.type.type)) {
             missingRequired = true;
             break;
           }
@@ -292,6 +286,15 @@ export function parseEvent(
     }
   }
   return undefined;
+}
+
+/** A sparse event map may leave out fields that can hold void. */
+export function canOmitEventMapField(type: string): boolean {
+  return (
+    type === "scSpecTypeOption" ||
+    type === "scSpecTypeVoid" ||
+    type === "scSpecTypeVal"
+  );
 }
 
 // Topic matching is fuzzy (prefix symbols + a minimum topic count), so a
