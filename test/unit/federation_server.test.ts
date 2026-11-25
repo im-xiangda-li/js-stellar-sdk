@@ -299,33 +299,33 @@ describe("federation-server.js tests", () => {
   });
 
   describe("FederationServer.createForDomain", () => {
-    it("creates correct object", async () => {
-      mockHttpClient.mockImplementation((url: string) => {
-        if (url.includes("https://acme.com/.well-known/stellar.toml")) {
-          return Promise.resolve({
-            data: `
-#   The endpoint which clients should query to resolve stellar addresses
-#   for users on your domain.
-FEDERATION_SERVER="https://api.stellar.org/federation"
-`,
-          });
-        }
-        return Promise.reject(new Error(`Unexpected URL: ${url}`));
-      });
+    it.each(["acme.com", "1and1.com", "4.sub.3m.com:8443"])(
+      "creates a server for %s",
+      async (domain) => {
+        mockHttpClient.mockResolvedValue({
+          data: 'FEDERATION_SERVER="https://api.stellar.org/federation"',
+        });
 
-      const federationServer = await Server.createForDomain("acme.com");
-      expect(federationServer["serverURL"].protocol).toEqual("https:");
-      expect(federationServer["serverURL"].hostname).toEqual("api.stellar.org");
-      expect(federationServer["serverURL"].pathname).toEqual("/federation");
-      expect(federationServer["domain"]).toEqual("acme.com");
-    });
+        const federationServer = await Server.createForDomain(domain);
+        expect(mockHttpClient.mock.calls[0][0]).toBe(
+          `https://${domain}/.well-known/stellar.toml`,
+        );
+        expect(federationServer["serverURL"].href).toBe(
+          "https://api.stellar.org/federation",
+        );
+        expect(federationServer["domain"]).toBe(domain);
+      },
+    );
 
-    it("fails for invalid domain before requesting stellar.toml", async () => {
-      await expect(Server.createForDomain("-acme.com")).rejects.toThrow(
-        /The provided domain is invalid/,
-      );
-      expect(mockHttpClient).not.toHaveBeenCalled();
-    });
+    it.each(["-acme.com", "acme-.com", "127.0.0.1", "0x7f000001:8080"])(
+      "rejects %s before requesting stellar.toml",
+      async (domain) => {
+        await expect(Server.createForDomain(domain)).rejects.toThrow(
+          /The provided domain is invalid/,
+        );
+        expect(mockHttpClient).not.toHaveBeenCalled();
+      },
+    );
 
     it("fails when stellar.toml does not contain federation server info", async () => {
       mockHttpClient.mockImplementation((url: string) => {
