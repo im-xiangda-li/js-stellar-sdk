@@ -103,6 +103,7 @@ describe("Server#getLedgerEntries", () => {
     expect(result.key.toXdr("base64")).toEqual(ledgerKeyXDR);
     expect(result.val.toXdr("base64")).toEqual(ledgerEntryXDR);
     expect(result.liveUntilLedgerSeq).toBeUndefined();
+    expect(result).not.toHaveProperty("ext");
     expect(mockPost).toHaveBeenCalledWith(serverUrl, {
       jsonrpc: "2.0",
       id: 1,
@@ -110,6 +111,31 @@ describe("Server#getLedgerEntries", () => {
       params: { keys: [ledgerKeyXDR] },
     });
     expect(mockPost).toHaveBeenCalledTimes(1);
+  });
+
+  it("decodes the extension for a sponsored entry", async () => {
+    const sponsor = StellarSdk.Keypair.fromRawEd25519Seed(
+      new Uint8Array(32).fill(2),
+    ).xdrAccountId();
+    const extension = xdr.LedgerEntryExt.v1(
+      new xdr.LedgerEntryExtensionV1({
+        sponsoringId: sponsor,
+        ext: xdr.LedgerEntryExtensionV1Ext.v0(),
+      }),
+    );
+    mockRPC(
+      [ledgerKeyXDR],
+      [
+        {
+          key: ledgerKeyXDR,
+          xdr: ledgerEntryXDR,
+          extXdr: extension.toXdr("base64"),
+        },
+      ],
+    );
+
+    const { entries } = await server.getLedgerEntries(ledgerKey);
+    expect(entries[0].ext).toEqual(extension);
   });
 
   it("throws when invalid rpc response", async () => {

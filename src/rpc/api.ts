@@ -5,6 +5,7 @@ import {
   LedgerCloseMeta,
   LedgerEntry,
   LedgerEntryData,
+  LedgerEntryExt,
   LedgerHeader,
   LedgerHeaderHistoryEntry,
   LedgerKey,
@@ -29,6 +30,8 @@ export namespace Api {
     lastModifiedLedgerSeq?: number;
     key: LedgerKey;
     val: LedgerEntryData;
+    /** Ledger-entry extension, if the RPC server returned it. */
+    ext?: LedgerEntryExt;
     liveUntilLedgerSeq?: number;
   }
 
@@ -38,6 +41,8 @@ export namespace Api {
     key: string;
     /** a base-64 encoded {@link LedgerEntryData} instance */
     xdr: string;
+    /** A base64-encoded {@link LedgerEntryExt}, if available. */
+    extXdr?: string;
     /**
      * optional, a future ledger number upon which this entry will expire
      *  based on https://github.com/stellar/soroban-tools/issues/1010

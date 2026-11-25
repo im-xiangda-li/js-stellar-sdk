@@ -6,6 +6,7 @@ import {
   LedgerCloseMeta,
   LedgerEntry,
   LedgerEntryData,
+  LedgerEntryExt,
   LedgerHeader,
   LedgerHeaderHistoryEntry,
   LedgerKey,
@@ -192,6 +193,9 @@ export function parseRawLedgerEntries(
         lastModifiedLedgerSeq: rawEntry.lastModifiedLedgerSeq,
         key: LedgerKey.fromXdr(rawEntry.key, "base64"),
         val: LedgerEntryData.fromXdr(rawEntry.xdr, "base64"),
+        ...(rawEntry.extXdr !== undefined && {
+          ext: LedgerEntryExt.fromXdr(rawEntry.extXdr, "base64"),
+        }),
         ...(rawEntry.liveUntilLedgerSeq !== undefined && {
           liveUntilLedgerSeq: rawEntry.liveUntilLedgerSeq,
         }),
